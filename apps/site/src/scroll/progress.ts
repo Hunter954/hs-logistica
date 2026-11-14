@@ -33,6 +33,7 @@ function setActive(id: string): void {
 
 export function buildProgress(): void {
   ensureChrome();
+  dots.querySelectorAll<HTMLButtonElement>('button[data-goto]').forEach(b => { b.hidden = !document.getElementById(b.dataset.goto || ''); });
   const header = document.querySelector('.nav-bar') as HTMLElement;
   ScrollTrigger.create({
     start: 0, end: 'max',

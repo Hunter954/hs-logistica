@@ -24,7 +24,11 @@ const items = <T>(list: T[] | null | undefined, fallback: T[]): T[] => (list && 
 /** Site ainda sem conteúdo no CMS (ou CMS fora do ar no build): vale o texto padrão da v2. */
 export function fallbackContent(cmsUrl = ''): Content {
   return {
-    brand: { ...V2.brand, logo: null }, hero: { ...V2.hero, photo: null }, services: V2.services, photos: [],
+    brand: { ...V2.brand, logo: null, logoWidth: 77, showName: true }, hero: { ...V2.hero, photo: null }, services: V2.services, photos: [],
+    navigation: { cta: V2.hero.cta1, items: [{ label: 'Serviços', target: 'servicos' }, { label: 'Localização', target: 'localizacao' }, { label: 'Empresa', target: 'empresa' }, { label: 'Blog', target: 'blog' }, { label: 'Dúvidas', target: 'duvidas' }] },
+    sections: { services: true, photos: true, where: true, steps: true, about: true, blog: true, faq: true, blogTitle: 'Do blog', blogLink: 'Ver todos os posts' },
+    quoteForm: { button: 'Enviar pedido de cotação', messagePlaceholder: 'Produto, volume e prazo', successMessage: 'Pedido de cotação recebido. Entraremos em contato.' },
+    footerOptions: { showAdminLink: true, adminLabel: 'Área do cliente' },
     where: V2.where, steps: V2.steps, about: V2.about, faq: V2.faq, contact: V2.contact, footer: V2.footer, theme: V2.theme,
     seo: { title: `${V2.brand.name} ${V2.brand.tag} | Foz do Iguaçu`, description: V2.hero.sub, image: null },
     latest: [], cmsUrl,
@@ -36,7 +40,11 @@ export function fromCms(home: Home | null, s: SiteSetting | null, latest: PostCa
   if (!home?.hero?.title || !s?.brand?.name) return { ...d, latest }
   const t = s.theme
   return {
-    brand: { name: s.brand.name, tag: str(s.brand.tag), logo: image(s.brand.logo) },
+    brand: { name: s.brand.name, tag: str(s.brand.tag), logo: image(s.brand.logo), logoWidth: Math.max(40, Math.min(180, s.brand.logoWidth || 77)), showName: s.brand.showName !== false },
+    navigation: { cta: str(s.navigation?.cta, d.navigation.cta), items: s.navigation?.items?.map(i => ({ label: i.label, target: i.target })) ?? d.navigation.items },
+    sections: { ...d.sections, ...Object.fromEntries(Object.entries(home.sections || {}).filter(([, v]) => v !== null && v !== undefined)) },
+    quoteForm: { button: str(home.quoteForm?.button, d.quoteForm.button), messagePlaceholder: str(home.quoteForm?.messagePlaceholder, d.quoteForm.messagePlaceholder), successMessage: str(home.quoteForm?.successMessage, d.quoteForm.successMessage) },
+    footerOptions: { showAdminLink: s.footerOptions?.showAdminLink !== false, adminLabel: str(s.footerOptions?.adminLabel, d.footerOptions.adminLabel) },
     hero: {
       title: home.hero.title, title2: str(home.hero.title2), sub: str(home.hero.sub), cta1: str(home.hero.cta1, d.hero.cta1), cta2: str(home.hero.cta2, d.hero.cta2),
       facts: (home.hero.facts || []).map((f) => f.text).filter(Boolean), photo: image(home.hero.photo),
@@ -48,7 +56,7 @@ export function fromCms(home: Home | null, s: SiteSetting | null, latest: PostCa
     about: { title: home.about.title, text: str(home.about.text), facts: (home.about.facts || []).map(({ k, v }) => ({ k, v })) },
     faq: { title: home.faq.title, items: (home.faq.items || []).map(({ q, a }) => ({ q, a })) },
     contact: {
-      title: d.contact.title, sub: d.contact.sub,
+      title: str(home.quoteForm?.title, d.contact.title), sub: str(home.quoteForm?.sub, d.contact.sub),
       address: str(s.contact?.address), phone: str(s.contact?.phone), whatsapp: str(s.contact?.whatsapp), email: str(s.contact?.email), hours: str(s.contact?.hours),
     },
     footer: str(s.footer, d.footer),

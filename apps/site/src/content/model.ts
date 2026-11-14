@@ -14,7 +14,11 @@ export interface Post extends PostCard {
 }
 
 export interface Content {
-  brand: { name: string; tag: string; logo: Img | null }
+  brand: { name: string; tag: string; logo: Img | null; logoWidth: number; showName: boolean }
+  navigation: { cta: string; items: { label: string; target: string }[] }
+  sections: { services: boolean; photos: boolean; where: boolean; steps: boolean; about: boolean; blog: boolean; faq: boolean; blogTitle: string; blogLink: string }
+  quoteForm: { button: string; messagePlaceholder: string; successMessage: string }
+  footerOptions: { showAdminLink: boolean; adminLabel: string }
   hero: { title: string; title2: string; sub: string; cta1: string; cta2: string; facts: string[]; photo: Img | null }
   services: { title: string; lead: string; items: Item[] }
   photos: Img[]

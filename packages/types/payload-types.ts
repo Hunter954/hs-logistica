@@ -72,6 +72,7 @@ export interface Config {
     quotes: Quote;
     media: Media;
     users: User;
+    activity: Activity;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -86,6 +87,7 @@ export interface Config {
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    activity: ActivitySelect<false> | ActivitySelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -192,6 +194,8 @@ export interface Post {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Use descrições claras. Imagens utilizadas no site ou no blog são protegidas contra exclusão.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -262,13 +266,23 @@ export interface Category {
   createdAt: string;
 }
 /**
+ * Perfis controlam o acesso real às áreas do painel. Desative contas para preservar o histórico.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
   name: string;
-  role: 'admin' | 'editor';
+  role: 'admin' | 'editor' | 'atendimento' | 'personalizado';
+  /**
+   * Aplicadas apenas ao perfil Personalizado. Publicar artigos e exportar contatos são permissões separadas.
+   */
+  permissions?: ('site' | 'brand' | 'blog' | 'publish' | 'media' | 'quotes' | 'export')[] | null;
+  /**
+   * Ao desativar, todas as sessões são encerradas.
+   */
+  active?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -290,7 +304,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * Pedidos enviados pelo formulário do site.
+ * Caixa de entrada dos pedidos enviados pelo site. Dados do cliente são preservados.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quotes".
@@ -302,10 +316,40 @@ export interface Quote {
   service?: string | null;
   message?: string | null;
   status: 'novo' | 'em contato' | 'fechado' | 'descartado';
+  priority?: ('normal' | 'alta') | null;
+  assignedTo?: (number | null) | User;
+  followUp?: string | null;
   /**
-   * Só aparece aqui no painel.
+   * Informações da equipe. Não são enviadas ao cliente.
    */
   notes?: string | null;
+  source?: string | null;
+  history?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  expectedUpdatedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Registro de ações da equipe. Não inclui senhas nem conteúdo privado das cotações.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity".
+ */
+export interface Activity {
+  id: number;
+  actor?: (number | null) | User;
+  area: string;
+  action: string;
+  target?: string | null;
+  summary: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -466,6 +510,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'activity';
+        value: number | Activity;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: number | Redirect;
       } | null);
@@ -558,7 +606,13 @@ export interface QuotesSelect<T extends boolean = true> {
   service?: T;
   message?: T;
   status?: T;
+  priority?: T;
+  assignedTo?: T;
+  followUp?: T;
   notes?: T;
+  source?: T;
+  history?: T;
+  expectedUpdatedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -631,6 +685,8 @@ export interface MediaSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
+  permissions?: T;
+  active?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -648,6 +704,19 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity_select".
+ */
+export interface ActivitySelect<T extends boolean = true> {
+  actor?: T;
+  area?: T;
+  action?: T;
+  target?: T;
+  summary?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -742,6 +811,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface Home {
   id: number;
+  expectedUpdatedAt?: string | null;
   hero: {
     title: string;
     title2?: string | null;
@@ -821,6 +891,24 @@ export interface Home {
         }[]
       | null;
   };
+  quoteForm?: {
+    title?: string | null;
+    sub?: string | null;
+    button?: string | null;
+    messagePlaceholder?: string | null;
+    successMessage?: string | null;
+  };
+  sections?: {
+    services?: boolean | null;
+    photos?: boolean | null;
+    where?: boolean | null;
+    steps?: boolean | null;
+    about?: boolean | null;
+    blog?: boolean | null;
+    faq?: boolean | null;
+    blogTitle?: string | null;
+    blogLink?: string | null;
+  };
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -838,6 +926,7 @@ export interface Home {
  */
 export interface SiteSetting {
   id: number;
+  expectedUpdatedAt?: string | null;
   brand: {
     name: string;
     tag?: string | null;
@@ -845,6 +934,19 @@ export interface SiteSetting {
      * Sem logo enviado, o site usa o logo padrão da HS.
      */
     logo?: (number | null) | Media;
+    logoWidth?: number | null;
+    showName?: boolean | null;
+  };
+  navigation?: {
+    configured?: boolean | null;
+    cta?: string | null;
+    items?:
+      | {
+          label: string;
+          target: 'servicos' | 'localizacao' | 'etapas' | 'empresa' | 'blog' | 'duvidas' | 'contato';
+          id?: string | null;
+        }[]
+      | null;
   };
   theme: {
     accent: string;
@@ -859,6 +961,10 @@ export interface SiteSetting {
     hours?: string | null;
   };
   footer?: string | null;
+  footerOptions?: {
+    showAdminLink?: boolean | null;
+    adminLabel?: string | null;
+  };
   seo?: {
     title?: string | null;
     description?: string | null;
@@ -872,6 +978,7 @@ export interface SiteSetting {
  * via the `definition` "home_select".
  */
 export interface HomeSelect<T extends boolean = true> {
+  expectedUpdatedAt?: T;
   hero?:
     | T
     | {
@@ -957,6 +1064,28 @@ export interface HomeSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  quoteForm?:
+    | T
+    | {
+        title?: T;
+        sub?: T;
+        button?: T;
+        messagePlaceholder?: T;
+        successMessage?: T;
+      };
+  sections?:
+    | T
+    | {
+        services?: T;
+        photos?: T;
+        where?: T;
+        steps?: T;
+        about?: T;
+        blog?: T;
+        faq?: T;
+        blogTitle?: T;
+        blogLink?: T;
+      };
   meta?:
     | T
     | {
@@ -973,12 +1102,28 @@ export interface HomeSelect<T extends boolean = true> {
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
+  expectedUpdatedAt?: T;
   brand?:
     | T
     | {
         name?: T;
         tag?: T;
         logo?: T;
+        logoWidth?: T;
+        showName?: T;
+      };
+  navigation?:
+    | T
+    | {
+        configured?: T;
+        cta?: T;
+        items?:
+          | T
+          | {
+              label?: T;
+              target?: T;
+              id?: T;
+            };
       };
   theme?:
     | T
@@ -997,6 +1142,12 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         hours?: T;
       };
   footer?: T;
+  footerOptions?:
+    | T
+    | {
+        showAdminLink?: T;
+        adminLabel?: T;
+      };
   seo?:
     | T
     | {
