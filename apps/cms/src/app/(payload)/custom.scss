@@ -67,6 +67,7 @@ body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 #nav-media::before { mask-image: url('/icons/images.svg'); }
 #nav-users::before { mask-image: url('/icons/people.svg'); }
 #nav-redirects::before { mask-image: url('/icons/link-45deg.svg'); }
+#nav-activity::before { mask-image: url('/icons/clock.svg'); }
 #nav-global-home::before { mask-image: url('/icons/house-door.svg'); }
 #nav-global-site-settings::before { mask-image: url('/icons/gear.svg'); }
 .hs-nav-footer { order: 5; margin-top: auto; padding-top: 25px; }
