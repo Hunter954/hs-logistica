@@ -169,11 +169,14 @@ export function LoginIntro() {
   )
 }
 
-export function LoginFooter() {
+export function LoginFooter({ emailRecovery = false }: { emailRecovery?: boolean }) {
   return (
-    <p className="hs-login-footer">
+    <div>
+    {!emailRecovery && <p className="hs-login-help">Esqueceu sua senha? Peça a um administrador para redefini-la em Equipe e permissões.</p>}
+    <p className={`hs-login-footer ${emailRecovery ? '' : 'hs-login-footer--no-email'}`}>
       <BI name="shield-check" />
       Acesso exclusivo da equipe HS Logística
     </p>
+    </div>
   )
 }

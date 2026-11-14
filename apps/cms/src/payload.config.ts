@@ -112,7 +112,7 @@ export default buildConfig({
       beforeNavLinks: ['/components/AdminUI#NavBrand'],
       afterNavLinks: ['/components/AdminUI#NavFooter'],
       beforeLogin: ['/components/AdminUI#LoginIntro'],
-      afterLogin: ['/components/AdminUI#LoginFooter'],
+      afterLogin: [{ path: '/components/AdminUI#LoginFooter', clientProps: { emailRecovery: !!e.SMTP_HOST } }],
       actions: [
         {
           path: '/components/AdminUI#HeaderAction',

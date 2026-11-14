@@ -217,6 +217,8 @@ body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 .hs-login-intro p { font-size: 13px; line-height: 1.8; color: #76859b; margin: 0; }
 .hs-login-footer { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 12px; color: #8895a7; margin: 25px 0 0; }
 .hs-login-footer .hs-icon { width: 14px; height: 14px; color: #69954c; }
+.hs-login-help { color: #61738b; font-size: 12px; line-height: 1.8; text-align: center; margin: 22px 0 0; }
+.login:has(.hs-login-footer--no-email) a[href$='/forgot'] { display: none; }
 .login .form-submit .btn { width: 100%; padding: 14px; }
 .login .field-type { margin-bottom: 20px; }
 .login .field-type input { padding: 13px 15px; }
