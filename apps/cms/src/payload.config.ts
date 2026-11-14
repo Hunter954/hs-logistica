@@ -60,10 +60,19 @@ export default buildConfig({
   cors: [env.siteUrl],
   csrf: [env.siteUrl, env.cmsUrl],
   admin: {
+    theme: 'light',
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: ' · HS Logística', icons: [{ rel: 'icon', type: 'image/png', url: '/logo.png' }] },
-    components: { graphics: { Logo: '/components/Brand#Logo', Icon: '/components/Brand#Icon' } },
+    components: {
+      graphics: { Logo: '/components/Brand#Logo', Icon: '/components/Brand#Icon' },
+      beforeNavLinks: ['/components/AdminUI#NavBrand'],
+      afterNavLinks: ['/components/AdminUI#NavFooter'],
+      beforeLogin: ['/components/AdminUI#LoginIntro'],
+      afterLogin: ['/components/AdminUI#LoginFooter'],
+      actions: [{ path: '/components/AdminUI#HeaderAction', clientProps: { siteUrl: env.siteUrl } }],
+      views: { dashboard: { Component: '/components/Dashboard#Dashboard' } },
+    },
     livePreview: {
       breakpoints: [{ label: 'Celular', name: 'mobile', width: 390, height: 844 }, { label: 'Computador', name: 'desktop', width: 1440, height: 900 }],
     },

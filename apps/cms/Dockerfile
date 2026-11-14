@@ -15,7 +15,7 @@ COPY apps/cms apps/cms
 # o importador da v2 lê o texto padrão do site
 COPY apps/site/src/content/v2.ts apps/site/src/content/v2.ts
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter cms build
+RUN pnpm --filter cms generate:importmap && pnpm --filter cms build
 
 FROM node:22.23.4-alpine AS run
 RUN apk add --no-cache libc6-compat && addgroup -S app && adduser -S app -G app
