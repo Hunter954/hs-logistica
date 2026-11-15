@@ -20,15 +20,46 @@ const ipOf = (req) => (process.env.TRUST_PROXY === '0' ? '' : String(req.headers
 // ---------- Conteúdo: lido do CMS na partida e a cada aviso de mudança; a última leitura boa fica em disco ----------
 let ssr = null, site = null, templates = null, loadedFromCms = false;
 const pages = new Map();          // endereço → HTML pronto
-async function refresh() {
-  site = await loadSite(ssr, CMS);
+let refreshQueue = Promise.resolve();
+function refresh() {
+  const pending = refreshQueue.catch(() => {}).then(async () => {
+  const next = await loadSite(ssr, CMS);
+  site = next;
   loadedFromCms = true; pages.clear(); packed.clear();
   try { fs.mkdirSync(DATA, { recursive: true }); fs.writeFileSync(SNAPSHOT + '.tmp', JSON.stringify(site)); fs.renameSync(SNAPSHOT + '.tmp', SNAPSHOT); } catch { /* sem disco gravável: segue só em memória */ }
+  });
+  refreshQueue = pending;
+  return pending;
+}
+// Hooks can run before their database transaction commits. Read the expected
+// version before rebuilding; concurrent invalidations are then processed in order.
+async function awaitCommitted(change) {
+  const globals = ['home', 'site-settings'];
+  const collections = ['posts', 'categories', 'media', 'redirects'];
+  const endpoint = globals.includes(change.what) ? 'globals/' + change.what : collections.includes(change.what) && /^\d+$/.test(String(change.id)) ? change.what + '/' + change.id : '';
+  if (!endpoint || (!change.updatedAt && !change.deleted)) return;
+  for (let i = 0; i < 15; i++) {
+    const r = await fetch(CMS + '/api/' + endpoint + '?depth=0', { headers: { 'x-preview-secret': SECRETS.preview }, signal: AbortSignal.timeout(5000) });
+    if (change.deleted && r.status === 404) return;
+    if (r.ok && !change.deleted) { const doc = await r.json(); if (Date.parse(doc.updatedAt) >= Date.parse(change.updatedAt)) return; }
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+  throw new Error('O CMS ainda não confirmou a versão salva.');
 }
 async function firstLoad() {
   try { await refresh(); console.log(`Conteúdo lido do CMS: ${site.posts.length} posts publicados`); return; }
   catch (e) { console.warn('CMS fora do ar na partida (' + e.message + ').'); }
-  try { site = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')); console.warn('Usando a última leitura boa guardada em disco.'); }
+  try {
+    const saved = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')), defaults = ssr.emptySite(CMS);
+    site = { ...defaults, ...saved, content: { ...defaults.content, ...saved.content,
+      brand: { ...defaults.content.brand, ...saved.content?.brand },
+      navigation: saved.content?.navigation || defaults.content.navigation,
+      sections: { ...defaults.content.sections, ...saved.content?.sections },
+      quoteForm: { ...defaults.content.quoteForm, ...saved.content?.quoteForm },
+      footerOptions: { ...defaults.content.footerOptions, ...saved.content?.footerOptions },
+    } };
+    console.warn('Usando a última leitura boa guardada em disco.');
+  }
   catch { site = { ...ssr.emptySite(CMS), redirects: [] }; console.warn('Sem leitura anterior: usando o conteúdo padrão.'); }
   const retry = setInterval(() => refresh().then(() => { clearInterval(retry); console.log('CMS voltou: conteúdo atualizado.'); }).catch(() => {}), 60000);
   retry.unref();
@@ -140,6 +171,7 @@ async function handle(req, res) {
     if (req.method === 'POST') {
       if (url === '/api/revalidate') {
         if (!safeEqual(req.headers['x-revalidate-secret'] || '', SECRETS.revalidate)) return json(res, 401, { error: 'Não autorizado.' });
+        await awaitCommitted(await readBody(req, 4000));
         await refresh(); return json(res, 200, { ok: true, posts: site.posts.length });
       }
       if (url === '/api/quote') return await quote(req, res);

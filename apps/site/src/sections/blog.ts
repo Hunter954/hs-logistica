@@ -15,6 +15,6 @@ export const postCard = (p: PostCard, heading = 'h3'): string => `
 /** "Do blog": os três posts mais recentes. Sem posts publicados, a seção não aparece. */
 export const blog = ({ c }: Ctx): string => (c.latest.length ? `
 <section id="blog" class="veil-full"><div class="wrap">
-  <div class="head head--row"><h2>Do blog</h2><a class="more" href="/blog"><span>Ver todos os posts</span>${ARROW}</a></div>
+  <div class="head head--row"><h2>${esc(c.sections.blogTitle)}</h2><a class="more" href="/blog"><span>${esc(c.sections.blogLink)}</span>${ARROW}</a></div>
   <div class="post-grid">${c.latest.map((p) => postCard(p)).join('')}</div>
 </div></section>` : '')

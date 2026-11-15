@@ -16,6 +16,6 @@ import { footer } from './footer'
 export function renderApp(c: Content): string {
   const x: Ctx = { c }
   return `${nav(x)}
-<main>${hero(x)}${services(x)}${photos(x)}${where(x)}${steps(x)}${about(x)}${blog(x)}${faq(x)}${contact(x)}</main>
+<main>${hero(x)}${c.sections.services ? services(x) : ''}${c.sections.photos ? photos(x) : ''}${c.sections.where ? where(x) : ''}${c.sections.steps ? steps(x) : ''}${c.sections.about ? about(x) : ''}${c.sections.blog ? blog(x) : ''}${c.sections.faq ? faq(x) : ''}${contact(x)}</main>
 ${footer(x)}`
 }

@@ -1,0 +1,139 @@
+{
+  "name": "hs-logistica-vzgmxn",
+  "services": {
+    "db": {
+      "image": "postgres:16-alpine",
+      "restart": "unless-stopped",
+      "environment": {
+        "POSTGRES_DB": "hs_cms",
+        "POSTGRES_USER": "hs",
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}"
+      },
+      "volumes": [
+        "db-data:/var/lib/postgresql/data"
+      ],
+      "networks": [
+        "internal"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U hs -d hs_cms"
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 10
+      }
+    },
+    "cms": {
+      "image": "hs-logistica-cms:ui-v4",
+      "restart": "unless-stopped",
+      "environment": {
+        "CMS_URL": "https://hs-logistica-cms.70.38.101.106.sslip.io",
+        "SITE_URL": "https://hs-logistica.70.38.101.106.sslip.io",
+        "REVALIDATE_SECRET": "${REVALIDATE_SECRET}",
+        "PREVIEW_SECRET": "${PREVIEW_SECRET}",
+        "QUOTE_PROXY_SECRET": "${QUOTE_PROXY_SECRET}",
+        "DATABASE_URI": "postgres://hs:${POSTGRES_PASSWORD}@db:5432/hs_cms",
+        "PAYLOAD_SECRET": "${PAYLOAD_SECRET}",
+        "ADMIN_EMAIL": "${ADMIN_EMAIL}",
+        "ADMIN_PASSWORD": "${ADMIN_PASSWORD}",
+        "ADMIN_NAME": "Administrador HS"
+      },
+      "volumes": [
+        "cms-media:/app/apps/cms/media"
+      ],
+      "networks": [
+        "internal",
+        "dokploy-network"
+      ],
+      "depends_on": {
+        "db": {
+          "condition": "service_healthy"
+        }
+      },
+      "labels": {
+        "traefik.enable": "true",
+        "traefik.docker.network": "dokploy-network",
+        "traefik.http.routers.hs-logistica-cms.rule": "Host(`hs-logistica-cms.70.38.101.106.sslip.io`)",
+        "traefik.http.routers.hs-logistica-cms.entrypoints": "websecure",
+        "traefik.http.routers.hs-logistica-cms.tls.certresolver": "letsencrypt",
+        "traefik.http.services.hs-logistica-cms.loadbalancer.server.port": "3001",
+        "traefik.http.routers.hs-logistica-cms-http.rule": "Host(`hs-logistica-cms.70.38.101.106.sslip.io`)",
+        "traefik.http.routers.hs-logistica-cms-http.entrypoints": "web",
+        "traefik.http.routers.hs-logistica-cms-http.middlewares": "hs-logistica-cms-https",
+        "traefik.http.middlewares.hs-logistica-cms-https.redirectscheme.scheme": "https"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001/api/globals/home').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ],
+        "interval": "10s",
+        "timeout": "8s",
+        "retries": 10,
+        "start_period": "30s"
+      }
+    },
+    "site": {
+      "image": "hs-logistica-site:workflows-v3",
+      "restart": "unless-stopped",
+      "environment": {
+        "CMS_URL": "https://hs-logistica-cms.70.38.101.106.sslip.io",
+        "SITE_URL": "https://hs-logistica.70.38.101.106.sslip.io",
+        "REVALIDATE_SECRET": "${REVALIDATE_SECRET}",
+        "PREVIEW_SECRET": "${PREVIEW_SECRET}",
+        "QUOTE_PROXY_SECRET": "${QUOTE_PROXY_SECRET}"
+      },
+      "volumes": [
+        "site-data:/app/data"
+      ],
+      "networks": [
+        "internal",
+        "dokploy-network"
+      ],
+      "labels": {
+        "traefik.enable": "true",
+        "traefik.docker.network": "dokploy-network",
+        "traefik.http.routers.hs-logistica-site.rule": "Host(`hs-logistica.70.38.101.106.sslip.io`)",
+        "traefik.http.routers.hs-logistica-site.entrypoints": "websecure",
+        "traefik.http.routers.hs-logistica-site.tls.certresolver": "letsencrypt",
+        "traefik.http.services.hs-logistica-site.loadbalancer.server.port": "3000",
+        "traefik.http.routers.hs-logistica-site-http.rule": "Host(`hs-logistica.70.38.101.106.sslip.io`)",
+        "traefik.http.routers.hs-logistica-site-http.entrypoints": "web",
+        "traefik.http.routers.hs-logistica-site-http.middlewares": "hs-logistica-site-https",
+        "traefik.http.middlewares.hs-logistica-site-https.redirectscheme.scheme": "https"
+      },
+      "depends_on": {
+        "cms": {
+          "condition": "service_healthy"
+        }
+      }
+    }
+  },
+  "volumes": {
+    "db-data": {
+      "external": true,
+      "name": "hs-logistica_db-data"
+    },
+    "cms-media": {
+      "external": true,
+      "name": "hs-logistica_cms-media"
+    },
+    "site-data": {
+      "external": true,
+      "name": "hs-logistica_site-data"
+    }
+  },
+  "networks": {
+    "internal": {
+      "external": true,
+      "name": "hs-logistica_internal"
+    },
+    "dokploy-network": {
+      "external": true
+    }
+  }
+}

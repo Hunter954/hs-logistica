@@ -6,5 +6,5 @@ export const slugify = (s: string): string =>
 /** Preenche o endereço a partir do título quando ele está vazio; se foi digitado, só normaliza. */
 export const slugFrom = (source: string): FieldHook => ({ value, data }) => {
   const typed = typeof value === 'string' ? value.trim() : ''
-  return slugify(typed || String(data?.[source] || ''))
+  return slugify(typed || String(data?.[source] || '')) || null
 }
