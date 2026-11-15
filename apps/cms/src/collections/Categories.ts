@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 import { anyone, can } from '../lib/access'
 import { auditCollection } from '../hooks/audit'
 import { hasPermission } from '../lib/permissions'
@@ -9,6 +9,7 @@ export const Categories: CollectionConfig = {
   slug: 'categories',
   labels: { singular: 'Categoria', plural: 'Categorias' },
   admin: {
+    components: { views: { list: { Component: '/components/workspace/Management#CategoryManager' } } },
     group: 'Blog',
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug'],
@@ -21,6 +22,10 @@ export const Categories: CollectionConfig = {
     delete: can('blog'),
   },
   hooks: {
+    beforeDelete: [async ({ id, req }) => {
+      const linked = await req.payload.count({ collection: 'posts', where: { categories: { contains: id } }, overrideAccess: true, req })
+      if (linked.totalDocs) throw new APIError('Esta categoria está em uso. Remova-a dos artigos antes de excluir.', 400)
+    }],
     afterChange: [revalidateAlways, auditCollection],
     afterDelete: [revalidateDelete],
   },

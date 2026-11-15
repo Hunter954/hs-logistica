@@ -12,6 +12,7 @@ export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Imagem', plural: 'Imagens' },
   admin: {
+    components: { views: { list: { Component: '/components/workspace/Management#MediaLibrary' } } },
     group: 'Configurações',
     useAsTitle: 'alt',
     hidden: ({ user }) => !hasPermission(user, 'media'),
@@ -25,6 +26,7 @@ export const Media: CollectionConfig = {
     delete: can('media'),
   },
   upload: {
+    pasteURL: false,
     staticDir: path.resolve(process.cwd(), 'media'),
     mimeTypes: MIME,
     adminThumbnail: 'thumb',

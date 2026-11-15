@@ -46,6 +46,7 @@ const plugins: Plugin[] = [
     overrides: {
       labels: { singular: 'Redirecionamento', plural: 'Redirecionamentos' },
       admin: {
+        components: { views: { list: { Component: '/components/workspace/Management#RedirectManager' } } },
         group: 'Configurações',
         hidden: ({ user }) => !hasPermission(user, 'brand'),
         description: 'Links antigos que devem levar a um endereço novo.',
@@ -120,6 +121,7 @@ export default buildConfig({
         },
       ],
       views: {
+        account: { Component: '/components/workspace/Account#Account' },
         dashboard: { Component: '/components/WorkspaceHome#WorkspaceHome' },
         inbox: {
           Component: '/components/WorkspaceViews#QuotesView',

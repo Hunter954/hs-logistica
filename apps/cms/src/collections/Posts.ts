@@ -14,7 +14,7 @@ import { revalidateDelete, revalidatePost } from '../hooks/revalidate'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
-  labels: { singular: 'Post', plural: 'Posts' },
+  labels: { singular: 'Artigo', plural: 'Artigos' },
   admin: {
     hidden: ({ user }) => !hasPermission(user, 'blog'),
     components: {
@@ -34,7 +34,7 @@ export const Posts: CollectionConfig = {
     delete: can('blog'),
   },
   versions: {
-    drafts: { autosave: { interval: 1500 }, schedulePublish: true },
+    drafts: { schedulePublish: true },
     maxPerDoc: 25,
   },
   defaultSort: '-publishedAt',

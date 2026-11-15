@@ -5,6 +5,7 @@ export const Activity: CollectionConfig = {
   slug: 'activity',
   labels: { singular: 'Atividade', plural: 'Histórico de atividades' },
   admin: {
+    components: { views: { list: { Component: '/components/workspace/Management#ActivityLog' } } },
     group: 'Configurações',
     useAsTitle: 'summary',
     defaultColumns: ['createdAt', 'actor', 'area', 'summary'],

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useAuth, useNav, usePreferences } from '@payloadcms/ui'
+import { useAuth, useNav } from '@payloadcms/ui'
 import { hasPermission, isAdmin, ROLE_LABELS } from '../lib/permissions'
 
 export function BI({
@@ -28,21 +28,25 @@ export function BI({
 export function NavBrand() {
   const pathname = usePathname()
   const { user } = useAuth()
-  const { hydrated, setNavOpen } = useNav()
-  const { getPreference } = usePreferences()
+  const { hydrated, navOpen, setNavOpen } = useNav()
   React.useEffect(() => {
-    if (!hydrated || !window.matchMedia('(min-width: 1100px)').matches) return
-    let cancelled = false
-    let frame = 0
-    // Wait for Payload to restore its saved state before opening this workspace.
-    void getPreference('nav').then(() => {
-      if (!cancelled) frame = requestAnimationFrame(() => setNavOpen(true))
-    })
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(frame)
+    const desktop = window.matchMedia('(min-width: 1100px)')
+    const keepOpen = () => {
+      if (hydrated && desktop.matches && !navOpen) setNavOpen(true)
     }
-  }, [hydrated, getPreference, setNavOpen])
+    keepOpen()
+    desktop.addEventListener('change', keepOpen)
+    return () => desktop.removeEventListener('change', keepOpen)
+  }, [hydrated, navOpen, setNavOpen])
+  React.useEffect(() => {
+    document.querySelectorAll<HTMLElement>('.nav__link').forEach((link) => {
+      const href = link.getAttribute('href') || (link.id.startsWith('nav-global-') ? '/admin/globals/' + link.id.slice(11) : link.id.startsWith('nav-') ? '/admin/collections/' + link.id.slice(4) : '')
+      const active = !!href && (pathname === href || pathname.startsWith(href + '/'))
+      link.classList.toggle('hs-nav-active', active)
+      if (active) link.setAttribute('aria-current', 'page')
+      else link.removeAttribute('aria-current')
+    })
+  }, [pathname])
   return (
     <div className="hs-nav-intro">
       <Link href="/admin" className="hs-brand">
@@ -96,17 +100,10 @@ export function NavBrand() {
 
 export function NavFooter() {
   const { user } = useAuth()
+  const pathname = usePathname()
   return (
     <div className="hs-nav-footer">
-      <div className="hs-nav-note">
-        <BI name="shield-check" />
-        <span>
-          Gestão do seu site
-          <br />
-          <small>HS Logística e Armazenagem</small>
-        </span>
-      </div>
-      <Link href="/admin/account" className="hs-profile">
+      <Link href="/admin/account" className={`hs-profile ${pathname === '/admin/account' ? 'is-active' : ''}`} aria-current={pathname === '/admin/account' ? 'page' : undefined}>
         <span className="hs-avatar">
           {String(user?.name || 'HS')
             .slice(0, 2)

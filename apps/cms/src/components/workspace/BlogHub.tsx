@@ -195,7 +195,7 @@ export function BlogHub() {
                   </span>
                   <h2>
                     <Link href={'/admin/collections/posts/' + p.id}>
-                      {p.title}
+                      {p.title || 'Rascunho sem título'}
                     </Link>
                   </h2>
                   <p>
